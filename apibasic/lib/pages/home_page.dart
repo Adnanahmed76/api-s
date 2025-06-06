@@ -1,6 +1,5 @@
 import 'dart:convert';
-
-import 'package:apibasic/services/user_post.dart';
+import 'package:apibasic/services/product_api.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -12,43 +11,49 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  User? user;
-  Future<void> fetchData() async {
-    final url = Uri.parse("https://jsonplaceholder.typicode.com/posts/1");
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
-      setState(() {
-        user = User.fromJson(data);
-      });
-      print(data);
-    } else {
-      print("Api Error ${response.statusCode}");
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     fetchData();
   }
 
+  List<Product> products = [];
+  Future<void> fetchData() async {
+    final url = Uri.parse("https://fakestoreapi.com/products");
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      List jsonData = jsonDecode(response.body);
+      setState(() {
+        products = jsonData.map((e) => Product.fromJson(e)).toList();
+      });
+    } else {
+      print("Api Error ${response.statusCode}");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("api's Fetch"),
+        title: Text("Api's fetched"),
       ),
-      body: user == null
-          ? CircularProgressIndicator()
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(user!.userId.toString()),
-                Text(user!.id.toString()),
-                Text(user!.title.toString()),
-                Text(user!.body.toString())
-              ],
+      body: products.isEmpty
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                final product = products[index];
+                return Card(
+                  margin: EdgeInsets.all(10),
+                  elevation: 4,
+                  child: ListTile(
+                    leading:
+                        Image.network(product.image, width: 50, height: 50),
+                    title: Text(product.title),
+                    subtitle: Text("₹${product.price.toString()}"),
+                  ),
+                );
+              },
             ),
     );
   }
